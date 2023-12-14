@@ -14,3 +14,5 @@
 1. https://docs.oracle.com/javase/8/docs/api/java/time/temporal/TemporalAdjusters.html για την εύρεση της τελευταίας μέρας της εβδομάδας και του μήνα με το 'nextOrSame' και με το ΄previousOrSame' τις πρώτες μέρες της εβδομάδας και του μήνα αντίστοιχα.
 
 2. https://stackoverflow.com/questions/13185727/reading-a-txt-file-using-scanner-class-in-java για το διάβασμα ενός αρχείου line by line 
+
+3. https://stackoverflow.com/questions/1816673/how-do-i-check-if-a-file-exists-in-java αν υπαρχει το file 

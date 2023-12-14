@@ -4,10 +4,7 @@
  */
 package com.mycompany.calendar;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.Scanner;
 
 /**
@@ -77,40 +74,6 @@ public class Tasks {
 
     public void setDeadline(LocalDateTime deadline) {
         this.deadline = deadline;
-    }
-    
-    public void addTask() throws ParseException  {
-        Scanner input = new Scanner(System.in);
-        
-        System.out.println("Please enter the title of the project:");
-        title = input.nextLine();
-        
-        System.out.println("Please enter the date and time of task(dd/MM/yyyy HH:mm:ss):");
-        String dateTime = input.nextLine();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-        Date dateT = dateFormat.parse(dateTime);
-        // Μετατροπή από Date σε LocalDateTime
-        date = dateT.toInstant().atZone(dateFormat.getTimeZone().toZoneId()).toLocalDateTime();
-        
-        
-        System.out.println("Please enter the deadline date and time of the project ( hh:mm:ss ):");       
-        String deadlineTime = input.nextLine();
-        SimpleDateFormat dateF = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-        Date deadlineDateTime = dateF.parse(deadlineTime);
-        // Μετατροπή από Date σε LocalDateTime
-        deadline = deadlineDateTime.toInstant().atZone(dateFormat.getTimeZone().toZoneId()).toLocalDateTime();
-        
-        System.out.println("Please enter the description of the project:");
-        description = input.nextLine();
-        
-        System.out.println("Is the project completed? (YES/NO)");
-        String answer = input.nextLine();
-        
-        if (answer.equalsIgnoreCase("YES")) {
-            status = "Completed";
-        }
-   
-        System.out.println("Appointment added successfully!");
     }
     
     public void printTask() {
