@@ -114,11 +114,12 @@ public class Tasks {
     }
     
     public void printTask() {
-        System.out.println("The title of the task is " + title);
-        System.out.println("The description is " + description);
-        System.out.println("The date is " + date);
-        System.out.println("The deadline is " + deadline);
-        System.out.println("The status is " + status);
+        System.out.println("The title of the task is " + title + ".");
+        System.out.println("This event is a task.");        
+        System.out.println("The description is " + description + ".");
+        System.out.println("The date is " + date + ".");
+        System.out.println("The deadline is " + deadline + ".");
+        System.out.println("The status is " + status + ".");
 
     }
     

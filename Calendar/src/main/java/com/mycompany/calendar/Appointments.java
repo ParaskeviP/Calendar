@@ -133,10 +133,11 @@ public class Appointments {
         }
     
     public void printAppointment() {
-        System.out.println("The title of the appointment is " + title);
-        System.out.println("The description is " + description);
-        System.out.println("The date is " + date);
-        System.out.println("The duration is " + duration);
+        System.out.println("The title of the appointment is " + title + ".");
+        System.out.println("This event is an appointment.");
+        System.out.println("The description is " + description + ".");
+        System.out.println("The date is " + date + ".");
+        System.out.println("The duration is " + duration + ".");
     }
     
 }

@@ -24,6 +24,14 @@ import java.time.format.DateTimeFormatter;
  * @author panagopoulou
  */
 
+
+/* 
+ΤΙ ΜΕΝΕΙ ΝΑ ΚΑΝΩ
+    add
+    description
+    μηνυμα αν δεν εχει να εμφανισει γεγονότα !!!!
+    χρεαιζεται το task σε day, week, ....
+*/
 public class Calendar {
 
     public static void main(String[] args) throws FileNotFoundException  {
@@ -53,7 +61,7 @@ public class Calendar {
 
                     File file = new File(args[1]);
                     Scanner sc = new Scanner(file); //stack overflow              
-                    //String line = sc.nextLine();
+         
                     String line;
                     System.out.println("Do you want to add an appointment or a task?");
                     String answer = input.nextLine();
@@ -98,13 +106,13 @@ public class Calendar {
                                 title = parts[parts.length-1].trim(); 
                             
                             } else if (line.contains("END:VEVENT")) {
-                            
+                                
                                 vevent = false;
                                 Appointments appointment = new Appointments(date, title, desc, duration);
                                 appointments.add(appointment);    
                                 
                             }
-                        //    System.out.println("Appointment added succesfully!");
+                            
                         } else if (answer.equalsIgnoreCase("Task")) {
  
                             if (line.contains("BEGIN:VTODO")) {
@@ -128,10 +136,10 @@ public class Calendar {
                                 String[] parts = line.split(":");
                                 String d = parts[1].trim();
                                 if (!d.contains("T")) {
-                                    d += "T000000"; // Προσθήκη ώρας προεπιλογής
+                                    d += "T000000Z"; // Προσθήκη ώρας προεπιλογής
                                 }
                                  // Καθορίστε τον φορματ της ημερομηνίας
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmmss");                                
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");                                
                                 // Μετατρέψτε το String σε LocalDateTime
                                 deadline = LocalDateTime.parse(d, formatter);
                                 
@@ -157,7 +165,7 @@ public class Calendar {
                                 }
                             
                             } else if (line.contains("END:VTODO")) {
-                            
+                                                              
                                 vevent = false;
                                 Tasks task = new Tasks(date,deadline, title, desc, status);
                                 tasks.add(task);
@@ -170,17 +178,12 @@ public class Calendar {
                         }
                         
                     }
-                //    for(Appointments appointment : appointments) {
-                //        System.out.println(appointment.getDate());
-                //    }
-                        for(Tasks task : tasks) {
-                            System.out.println(task.getDate());
-                        }
-                    LocalDateTime today = teller.now();
                     
+                        
+                    LocalDateTime dateTime = teller.now();
+                    boolean check = false; 
                     if (args[0].equals("day")) {                       
-                           
-                        LocalDateTime dateTime = teller.now();
+                        
                         // Find the end of the day                          
                         LocalDateTime endOfDay = dateTime.toLocalDate().atTime(LocalTime.MAX);                        
                         
@@ -192,6 +195,8 @@ public class Calendar {
                               
                                 if(result < 0) { //dateTime < endOfDay
                                     appointment.printAppointment();
+                                    check = true;
+                                    System.out.println(" ");
                                 }  
 
                             }
@@ -202,20 +207,24 @@ public class Calendar {
 
                                 int result = task.getDate().compareTo(endOfDay); 
 
-                                if(result < 0) { //dateTime > startOfMonth
+                                if(result < 0) { //dateTime < startOfMonth
                                     task.printTask();
+                                    check = true;
+                                    System.out.println(" ");
                                 }                               
 
                             } 
                         } 
+                        if (check == false) {
+                            System.out.println("There are no events for today.");
+                        }
                         
                     } else if (args[0].equals("week")) {
                         
-                        LocalDateTime dateTime = teller.now();
                         //βρισκει το τελος της εβδομαδας χρησιμοποιοντας το temporalAdjusters
                         LocalDateTime endOfWeek = dateTime.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
                         endOfWeek = endOfWeek.withHour(23).withMinute(59).withSecond(59);
-                        System.out.println(endOfWeek);
+
                         for(Appointments appointment : appointments) {
                                                 
                             if(dateTime.compareTo(appointment.getDate()) < 0) {
@@ -224,6 +233,7 @@ public class Calendar {
                                 
                                 if(result < 0) { //dateTime < endOfWeek
                                     appointment.printAppointment();
+                                    check = true;
                                     System.out.println(" ");
                                 }                               
                             
@@ -235,17 +245,20 @@ public class Calendar {
    
                             int result = task.getDate().compareTo(endOfWeek); 
 
-                                if(result < 0) { //dateTime > startOfMonth
+                                if(result < 0) { //dateTime < endOfWeek
                                     task.printTask();
+                                    check = true;
                                     System.out.println(" ");
                                 }                               
 
                             } 
                         } 
+                        if (check == false) {
+                            System.out.println("There are no events for this week.");
+                        }
                         
                     } else if (args[0].equals("month")) {
                     
-                        LocalDateTime dateTime = teller.now();
                         LocalDateTime endOfMonth = dateTime.with(TemporalAdjusters.lastDayOfMonth());// Find the end of the month using TemporalAdjusters
                         endOfMonth = endOfMonth.withHour(23).withMinute(59).withSecond(59);
                         
@@ -256,6 +269,7 @@ public class Calendar {
                                 
                                 if(result < 0) { //dateTime < endOfMonth
                                     appointment.printAppointment();
+                                    check = true;
                                     System.out.println(" ");
                                 }  
                                 
@@ -268,17 +282,20 @@ public class Calendar {
 
                                 int result = task.getDate().compareTo(endOfMonth); 
 
-                                if(result < 0) { //dateTime > startOfMonth
+                                if(result < 0) { //dateTime < endOfMonth
                                     task.printTask();
+                                    check = true;
                                     System.out.println(" ");
                                 }                               
 
                             } 
-                        } 
+                        }
+                        if (check == false) {
+                            System.out.println("There are no events for this month.");
+                        }
                                                 
                     } else if (args[0].equals("pastday")) {
                         
-                        LocalDateTime dateTime = teller.now();
                         // Find the start of the day
                         LocalDateTime startOfDay = dateTime.toLocalDate().atTime(LocalTime.MIN);
                             
@@ -290,6 +307,7 @@ public class Calendar {
 
                                 if(result > 0) { //dateTime > startOfDay
                                     appointment.printAppointment();
+                                    check = true;
                                     System.out.println(" ");
                                 }                               
                                 
@@ -297,22 +315,25 @@ public class Calendar {
                         }
                         for(Tasks task : tasks) {
                             
-                            if(dateTime.equals(task.getDate())) {
+                            if(dateTime.compareTo(task.getDate()) > 0) {
 
                                 int result = task.getDate().compareTo(startOfDay); 
 
-                                if(result > 0) { //dateTime > startOfMonth
+                                if(result > 0) { //dateTime > startOfDay
                                     task.printTask();
+                                    check = true;
                                     System.out.println(" ");
                                 }                               
                                 
                             } 
-                        } 
+                        }
+                        if (check == false) {
+                            System.out.println("There were no events for today.");
+                        }
                         
                     } else if (args[0].equals("pastweek")) {
                         
-                        LocalDateTime dateTime = teller.now();
-                            // Find the start of the day
+                        // Find the start of the day
                         LocalDateTime startOfWeek = dateTime.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toLocalDate().atTime(LocalTime.MIN);
                         
                               
@@ -322,30 +343,36 @@ public class Calendar {
 
                                 int result = appointment.getDate().compareTo(startOfWeek); 
 
-                                if(result > 0) { //dateTime > startOfDay
+                                if(result > 0) { //dateTime > startOfWeek
                                     appointment.printAppointment();
+                                    check = true;
                                     System.out.println(" ");
+                                    
                                 }                               
 
                             } 
                         }
                         for(Tasks task : tasks) {
                             System.out.println(task.getDate());
-                            if(dateTime.equals(task.getDate())) {
+                            
+                            if(dateTime.compareTo(task.getDate()) > 0) {
 
                                 int result = task.getDate().compareTo(startOfWeek); 
 
-                                if(result > 0) { //dateTime > startOfMonth
+                                if(result > 0) { //dateTime > startOfWeek
                                     task.printTask();
+                                    check = true;
                                     System.out.println(" ");
                                 }                               
 
                             } 
                         } 
+                        if (check == false) {
+                            System.out.println("There were no events for this week.");
+                        }
                         
                     } else if (args[0].equals("pastmonth")) {
                         
-                        LocalDateTime dateTime = teller.now();
                         // Find the start of the day
                         LocalDateTime startOfMonth = dateTime.toLocalDate().atTime(LocalTime.MIN);
                             
@@ -357,6 +384,7 @@ public class Calendar {
 
                                 if(result > 0) { //dateTime > startOfMonth
                                     appointment.printAppointment();
+                                    check = true;
                                     System.out.println(" ");
                                 }                               
                                 
@@ -364,51 +392,62 @@ public class Calendar {
                         } 
                         for(Tasks task : tasks) {
                             
-                            if(dateTime.equals(task.getDate())) {
+                            if(dateTime.compareTo(task.getDate()) > 0) {
 
                                 int result = task.getDate().compareTo(startOfMonth); 
 
                                 if(result > 0) { //dateTime > startOfMonth
                                     task.printTask();
+                                    check = true;
                                     System.out.println(" ");
                                 }                               
 
                             } 
                         } 
+                        if (check == false) {
+                            System.out.println("There were no events for this month.");
+                        }
                     //για να εκτυπώσει τις εργασίες που δεν ολοκληρώθηκαν και δεν πέρασε η προσθεσμία.    
                     } else if (args[0].equals("todo")) { 
-                        
-                        LocalDateTime dateTime = teller.now();
-                       
+                                        
                         for(Tasks task : tasks ) {
-                                                       
-                            int result = task.getDate().compareTo(task.getDeadline());
+                                                      
+                            int result = dateTime.compareTo(task.getDeadline());
+                            System.out.println(task.isStatus());
+                            System.out.println(task.getDeadline()); 
                             
-                            while( (result > 0) && (!status.equals("COMPLETED")) ) { // dateTime > deadline & STATUS isn't completed
+                            if( (result < 0) && (!status.equals("COMPLETED")) ) { // dateTime > deadline & STATUS isn't completed
                                 task.printTask();
-                                
+                                check = true;
+                                System.out.println(" ");
                                 result = dateTime.compareTo(task.getDeadline()); //ενημερωνει την result για το νεο deadline
                             }
-                                
-                    }
+                                    
+                        }
+                        if (check == false) {
+                            System.out.println("There are no events that were not completed and the deadline has not passed.");
+                        }
                     //για να εκτυπώσει τις εργασίες που δεν ολοκληρώθηκαν και πέρασε η προσθεσμία.    
                     } else if (args[0].equals("due")) {
-                            
-                        LocalDateTime dateTime = teller.now();
-                       
+                                                   
                         for(Tasks task : tasks ) {
                             
-                            int result = task.getDate().compareTo(task.getDeadline());
+                            int result = dateTime.compareTo(task.getDeadline());
                             
-                            while( (result < 0) && (!status.equals("COMPLETED")) ) { // dateTime < deadline & STATUS isn't completed
+                            if( (result > 0) && (!status.equals("COMPLETED")) ) { // dateTime < deadline & STATUS isn't completed
                                 task.printTask();
+                                check = true;
+                                System.out.println(" ");
                             }
                                 
                         }
-                      
-                    }                  
-                    sc.close();
+                        if (check == false) {
+                        System.out.println("There are no events that were not completed and the deadline has passed.");
+                        }
+                    }     
                     
+                    sc.close();
+                    TimeService.stop();
                 }
 
             } else if (args.length == 1 ){ // μπαινει στην δευτερη λειτουργια
