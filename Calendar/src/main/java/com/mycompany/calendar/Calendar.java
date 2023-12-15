@@ -10,19 +10,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.time.Duration;
-
 import gr.hua.dit.oop2.calendar.TimeTeller;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import gr.hua.dit.oop2.calendar.TimeService;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -30,32 +32,26 @@ import java.time.format.DateTimeFormatter;
  * @author panagopoulou
  */
 
-/* 
-ΤΙ ΜΕΝΕΙ ΝΑ ΚΑΝΩ
-    add!!!
-    description
-    ταξινομημενεσ λιστεσ εκφωνηση
-    μηνυμα αν δεν εχει να εμφανισει γεγονότα !!!!
-    χρεαιζεται το task σε day, week, .... !!!!
-*/
 public class Calendar {
 
     public static void main(String[] args) throws FileNotFoundException  {
             Scanner input = new Scanner(System.in);
 
             TimeTeller teller = TimeService.getTeller();
-         
-            if (args.length == 2) { // Μπαινει στην πρωτη λειτουργια
+            List<Appointments> appointments = new ArrayList<Appointments>();
+            List<Tasks> tasks = new ArrayList<Tasks>();
             
+         
+            if (args.length == 2) { // Μπαινει στην πρωτη λειτουργια, δηλαδή δέχεται στο terminal δύο ορίσματα      
+                
                 if (!("day".equals(args[0]) || "week".equals(args[0]) || "month".equals(args[0]) || "pastday".equals(args[0]) || "pastweek".equals(args[0]) || "pastmonth".equals(args[0]) || "todo".equals(args[0]) || "due".equals(args[0]) || args[1].contains(".ics"))) {
                     System.out.println("Arguments aren't correct!");
                     System.exit(1);
                 } else {
-                    List<Appointments> appointments = new ArrayList<Appointments>();
-                    List<Tasks> tasks = new ArrayList<Tasks>();
+                    
                    
-                    boolean vevent = true;
-                    boolean vtask = true;
+                    boolean vevent = true; // έλεγχος για αν είναι σε vevent
+                    boolean vtask = true; // έλεγχος για αν ειναι σε vtask
                     String desc = "";
                     LocalDateTime date = null;
                     LocalDateTime dateEnd = null;
@@ -67,59 +63,57 @@ public class Calendar {
                     String firstArgument = args[0];
                     String secArgumnet = args[1];
 
-                    File file = new File(args[1]);
-                    Scanner sc = new Scanner(file); //stack overflow              
+                    File file = new File(args[1]); //το όνομα του file καθοριζεται απο το δεύτερο όρισμα
+                    Scanner sc = new Scanner(file); // scanner για να ανοίξει και να διαβάσει το αρχείο line by line        
          
                     String line;
 
                     while (sc.hasNextLine()) { 
-                        line = sc.nextLine();                          
+                        line = sc.nextLine(); //αποθήκευση μίας γραμμής του αρχείου στο string line για μετέπειτα επεξεργασία                       
                            
                         if (vevent) {
-                            if (line.contains("BEGIN:VEVENT")) {
+                            if (line.contains("BEGIN:VEVENT")) { // εάν μέσα στη γραμμή περιέχεται το "BEGIN:VEVENT"
                                                             
-                                vevent = true;
-                                vtask = false;
+                                vevent = true; // γίνεται true επειδή μπήκε σε appointment
+                                vtask = false; // γίνεται false επειδή μπαινει σε appointment
+                                
                             } else if (line.contains("DESCRIPTION:")) {
                             
-                                desc = line;
-                                desc = desc.replace("DESCRIPTION:",""); //stackoverflow
+                                String[] parts = line.split(":"); //χωρίζει την εντολή στο μέρος πριν το " : " και μετά
+                                desc = parts[1].trim(); // παίρνει το μέρος μετά το " : ", δηλαδή ολόκληρη την περιγραφή
                                 
                             } else if (line.contains("DTSTART")) {
                             
-                                String[] parts = line.split(":");
-                                String dt = parts[1].trim(); 
+                                String[] parts = line.split(":"); //χωρίζει την εντολή στο μέρος πριν το " : " και μετά
+                                String dt = parts[1].trim(); // παίρνει το μέρος μετά το " : ", δηλαδή την ημερομηνία
 
-                                // Έλεγχος εάν περιέχει ώρα
-                                if (!dt.contains("T")) {
-                                    dt += "T000000"; // Προσθήκη ώρας προεπιλογής
-                                }
-                                //System.out.println(dt);
-                                // Καθορίστε τον φορματ της ημερομηνίας
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");                                
-                                // Μετατρέψτε το String σε LocalDateTime
-                                date = LocalDateTime.parse(dt, formatter);                                
-                             //   System.out.println(date);
+                                if (!dt.contains("T")) { // ελέγχει εάν υπάρχει η ώρα
+                                    dt += "T000000"; // προσθέτει ώρα εαν δεν υπάρχει
+                                }                               
+                                
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"); // καθορίζει το φορματ της ημερομηνίας                                                               
+                                date = LocalDateTime.parse(dt, formatter); // μετατρέπει το String σε LocalDateTime                          
                            
                             } else if (line.contains("DURATION")) {
                                
-                                String[] parts = line.split(":");
-                                String d = parts[1].trim();                            
-                                duration = Duration.parse(d);
-                                dateEnd = null;
+                                String[] parts = line.split(":"); //χωρίζει την εντολή στο μέρος πριν το " : " και μετά
+                                String d = parts[1].trim(); // παίρνει το μέρος μετά το " : ", δηλαδή την διάρκεια         
+                                duration = Duration.parse(d); //μετατρέπει το String σε Duration
+                                dateEnd = null; //εάν υπάρχει η διάρκεια δεν θα έχει DTEND 
                             
                             } else if(line.contains("DTEND")) { 
                                 
-                                String[] parts = line.split(":");
-                                String dtE = parts[parts.length - 1].trim();
+                                String[] parts = line.split(":");//χωρίζει την εντολή στο μέρος πριν το " : " και μετά
+                                //σε περίπτωση που το αρχείο περιέχει δίπλα απο το DTEND κατι άλλο, εμφανίζει το τελευταίο μέρος μόνο δηλαδή την ημερομηνία
+                                //πχ. στο αρχείο greece.ics που περιέχει το VALUE=DATE δίπλα στο DTEND                                
+                                String dtE = parts[parts.length - 1].trim(); 
                                 if (!dtE.contains("T")) {
                                     dtE += "T000000"; // Προσθήκη ώρας προεπιλογής
                                 }
-                                // Καθορίστε τον φορματ της ημερομηνίας
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");                                
-                                // Μετατρέψτε το String σε LocalDateTime
-                                dateEnd = LocalDateTime.parse(dtE, formatter);
-                                duration = null;
+                                
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"); // καθορίζει το φορματ της ημερομηνίας                                             
+                                dateEnd = LocalDateTime.parse(dtE, formatter);// μετατρέπει το String σε LocalDateTime 
+                                duration = null; //εάν υπάρχει το DTEND δεν θα υπλαρχει διάρκεια
                                 
                             } else if (line.contains("SUMMARY")) {
                             
@@ -128,14 +122,15 @@ public class Calendar {
                             
                             } else if (line.contains("END:VEVENT")) {
                                 
-                                vevent = true;
-                                vtask = true;
+                                vevent = true; //
+                                vtask = true; //
+                                //αποθήκευση και προσθήκη πληροφοριών στην λίστα
                                 Appointments appointment = new Appointments(date, dateEnd, title, desc, duration);
                                 appointments.add(appointment);    
                                 
                             }
                         }
-                        if (vtask) {
+                        if (vtask) { //αντίστοιχα με τα παραπάνω
  
                             if (line.contains("BEGIN:VTODO")) {
                                                                 
@@ -147,11 +142,10 @@ public class Calendar {
                                 String[] parts = line.split(":");
                                 String dt = parts[1].trim(); 
                                 if (!dt.contains("T")) {
-                                    dt += "T000000Z"; // Προσθήκη ώρας προεπιλογής
+                                    dt += "T000000Z"; 
                                 }
-                                 // Καθορίστε τον φορματ της ημερομηνίας
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");                                
-                                // Μετατρέψτε το String σε LocalDateTime                               
+
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");                                                                                         
                                 date = LocalDateTime.parse(dt, formatter);   
                                 
                             } else if (line.contains("DUE;VALUE=DATE")) {   
@@ -159,11 +153,10 @@ public class Calendar {
                                 String[] parts = line.split(":");
                                 String d = parts[1].trim();
                                 if (!d.contains("T")) {
-                                    d += "T000000Z"; // Προσθήκη ώρας προεπιλογής
+                                    d += "T000000Z"; 
                                 }
-                                 // Καθορίστε τον φορματ της ημερομηνίας
+                              
                                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");                                
-                                // Μετατρέψτε το String σε LocalDateTime
                                 deadline = LocalDateTime.parse(d, formatter);
                                 
                             } else if (line.contains("SUMMARY")) {
@@ -200,22 +193,24 @@ public class Calendar {
                         
                     }
                     
-                        
-                    LocalDateTime dateTime = teller.now();
-                    boolean check = false; 
-                    if (args[0].equals("day")) {                       
-                        
-                        // Find the end of the day                          
-                        LocalDateTime endOfDay = dateTime.toLocalDate().atTime(LocalTime.MAX);                        
+                    appointments.sort(Appointments :: compareTo); //μέθοδος που ταξινομεί την λίστα των αppointments
+                    tasks.sort(Tasks :: compareTo); //μέθοδος που ταξινομεί την λίστα των tasks
+                    
+                    LocalDateTime dateTime = teller.now();//αποθήκευση στην dateTime την σημερινή ημερομηνία και ώρα
+                    boolean check = false; //μεταβλητή για έλεγχος εκτύπωσης γεγονότων 
+                    if (args[0].equals("day")) { //εάν το πρώτο όρισμα ειναι day                       
+                                                
+                        LocalDateTime endOfDay = dateTime.toLocalDate().atTime(LocalTime.MAX);//βρίσκει το τέλος της ημέρας χρησιμοποιοντας το temporalAdjusters                       
                         
                         for(Appointments appointment : appointments) {
                             
-                           if(dateTime.compareTo(appointment.getDate()) < 0) {
+                            // εαν η σημερινή ημερομηνία και ώρα είναι μικρότερη απο την ημερομηνία και ώρα των γεγονότων
+                            if(dateTime.compareTo(appointment.getDate()) < 0) { 
   
-                              int result = appointment.getDate().compareTo(endOfDay);
+                              int result = appointment.getDate().compareTo(endOfDay); //συγκρίνει την σημερινή ημερομηνία και ώρα των γεγονότων με το τέλος της ημέρας
                               
                                 if(result < 0) { //dateTime < endOfDay
-                                    appointment.printAppointment();
+                                    appointment.printAppointment(); //μέθοδος που εμφανίζει τα appointments
                                     check = true;
                                     System.out.println(" ");
                                 }  
@@ -229,18 +224,18 @@ public class Calendar {
                                 int result = task.getDate().compareTo(endOfDay); 
 
                                 if(result < 0) { //dateTime < startOfMonth
-                                    task.printTask();
+                                    task.printTask();//μέθοδος που εμφανίζει τα tasks
                                     check = true;
                                     System.out.println(" ");
                                 }                               
 
                             } 
                         } 
-                        if (check == false) {
+                        if (check == false) { //εαν δεν έχει βρει κάτι να εμφανίσει 
                             System.out.println("There are no events for today.");
                         }
                         
-                    } else if (args[0].equals("week")) {
+                    } else if (args[0].equals("week")) { //αντίστοιχα με την day
                         
                         //βρισκει το τελος της εβδομαδας χρησιμοποιοντας το temporalAdjusters
                         LocalDateTime endOfWeek = dateTime.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
@@ -278,9 +273,10 @@ public class Calendar {
                             System.out.println("There are no events for this week.");
                         }
                         
-                    } else if (args[0].equals("month")) {
+                    } else if (args[0].equals("month")) { // αντίστοιχα με την day, week
                     
-                        LocalDateTime endOfMonth = dateTime.with(TemporalAdjusters.lastDayOfMonth());// Find the end of the month using TemporalAdjusters
+                        // βρίσκει το τέλος του μήνα χρησιμοποιοντας το temporalAdjusters
+                        LocalDateTime endOfMonth = dateTime.with(TemporalAdjusters.lastDayOfMonth());
                         endOfMonth = endOfMonth.withHour(23).withMinute(59).withSecond(59);
                         
                         for(Appointments appointment : appointments) {
@@ -317,17 +313,17 @@ public class Calendar {
                                                 
                     } else if (args[0].equals("pastday")) {
                         
-                        // Find the start of the day
+                        // βρίσκει την αρχή της ημέρας χρησιμοποιοντας το temporalAdjusters
                         LocalDateTime startOfDay = dateTime.toLocalDate().atTime(LocalTime.MIN);
                             
                         for(Appointments appointment : appointments) {
                             
-                            if(dateTime.compareTo(appointment.getDate()) > 0) {
+                            if(dateTime.compareTo(appointment.getDate()) > 0) { //εαν η σημερινή ημερομηνία και ώρα είναι μεγαλύτερη απο την ημερομηνία και ώρα των γεγονότων
                                 
-                                int result = appointment.getDate().compareTo(startOfDay); 
+                                int result = appointment.getDate().compareTo(startOfDay); //συγκρίνει την ημερομηνία και ώρα των γεγονότων με την αρχή της ημέρας
 
                                 if(result > 0) { //dateTime > startOfDay
-                                    appointment.printAppointment();
+                                    appointment.printAppointment();//μέθοδος που εμφανίζει τα appointments
                                     check = true;
                                     System.out.println(" ");
                                 }                               
@@ -341,20 +337,20 @@ public class Calendar {
                                 int result = task.getDate().compareTo(startOfDay); 
 
                                 if(result > 0) { //dateTime > startOfDay
-                                    task.printTask();
+                                    task.printTask();//μέθοδος που εμφανίζει τα tasks
                                     check = true;
                                     System.out.println(" ");
                                 }                               
                                 
                             } 
                         }
-                        if (check == false) {
+                        if (check == false) { //εαν δεν έχει βρει κάτι να εμφανίσει 
                             System.out.println("There were no events for today.");
                         }
                         
-                    } else if (args[0].equals("pastweek")) {
+                    } else if (args[0].equals("pastweek")) { //αντίστοιχα με την pastday
                         
-                        // Find the start of the day
+                        // βρίσκει την αρχή της εβδομάδας
                         LocalDateTime startOfWeek = dateTime.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toLocalDate().atTime(LocalTime.MIN);
                         
                               
@@ -374,7 +370,6 @@ public class Calendar {
                             } 
                         }
                         for(Tasks task : tasks) {
-                            System.out.println(task.getDate());
                             
                             if(dateTime.compareTo(task.getDate()) > 0) {
 
@@ -392,9 +387,9 @@ public class Calendar {
                             System.out.println("There were no events for this week.");
                         }
                         
-                    } else if (args[0].equals("pastmonth")) {
+                    } else if (args[0].equals("pastmonth")) { //αντίστοιχα με τη pastday, pastweek
                         
-                        // Find the start of the day
+                        // βρίσκει την αρχή του μήνα
                         LocalDateTime startOfMonth = dateTime.toLocalDate().atTime(LocalTime.MIN);
                             
                         for(Appointments appointment : appointments) {
@@ -428,20 +423,18 @@ public class Calendar {
                         if (check == false) {
                             System.out.println("There were no events for this month.");
                         }
-                    //για να εκτυπώσει τις εργασίες που δεν ολοκληρώθηκαν και δεν πέρασε η προσθεσμία.    
-                    } else if (args[0].equals("todo")) { 
+                    //για να εκτυπώσει τις εργασίες που δεν ολοκληρώθηκαν και δεν πέρασε η προσθεσμία   
+                    } else if (args[0].equals("todo")) { //εάν το πρώτο όρισμα ειναι το "todo"
                                         
-                        for(Tasks task : tasks ) {
+                        for(Tasks task : tasks ) { //διατρέχει όλη την λίστα των tasks
                                                       
-                            int result = dateTime.compareTo(task.getDeadline());
-                            System.out.println(task.isStatus());
-                            System.out.println(task.getDeadline()); 
+                            int result = dateTime.compareTo(task.getDeadline());//συγκρίνει την σημερινή ημερομηνία και ώρα με το deadline του task
                             
                             if( (result < 0) && (!status.equals("COMPLETED")) ) { // dateTime > deadline & STATUS isn't completed
                                 task.printTask();
                                 check = true;
                                 System.out.println(" ");
-                                result = dateTime.compareTo(task.getDeadline()); //ενημερωνει την result για το νεο deadline
+
                             }
                                     
                         }
@@ -471,82 +464,112 @@ public class Calendar {
                     TimeService.stop();
                 }
 
-            } else if (args.length == 1 ){ // μπαινει στην δευτερη λειτουργια
+            } else if (args.length == 1 ){ // μπαινει στην δευτερη λειτουργια, δηλαδή δέχεται στο terminal ένα όρισμα
 
-                if(!args[0].contains(".ics")) {
+                if(!args[0].contains(".ics")) { //εάν στο πρώτο όρισμα δεν περιέχεται το ".ics"
                     
                     System.out.println("Argument isn't correct!");
                     System.exit(1);
                     
                 } else {
                     
-                    Path path = Paths.get(args[0]);
+                    Path path = Paths.get(args[0]);//το πρώτο όρισμα είναι το path name
                     
-                    if(Files.exists(path)) {
+                    if(Files.exists(path)) { //εάν υπάρχει το αρχείο
                         
                         System.out.println("The file exists.");
                         
-                    } else { //aν δεν υπαρχει το file
+                    } else { //αν δεν υπαρχει το file
                         
                         System.out.println("The file does not exist.");
                         try {
-                            // Use Files.createFile to create the file
-                            Files.createFile(path);
+                            
+                            Files.createFile(path);  // δημιουργία αρχείου χρησιμοποιώντας το Files.createFile
                             System.out.println("File created successfully.");
-                        } catch (IOException e) {
-                            // Handle exceptions, such as if the file already exists
+                        } catch (IOException e) { //exceptions
+                            
                             System.err.println("Unable to create the file: " + e.getMessage());
                             System.exit(1);
                         }
                     }
                     boolean rep = false;
-                    System.out.println("Do you want to add an appointment or a task?");
-                    String answer = input.nextLine();
+                    System.out.println("Please provide your choice:");
+                    System.out.println("(1)Add an Event");
+                    System.out.println("(2)Change the status of the Task");
+                    Scanner inpu3 = new Scanner(System.in);
+                    int choice=input.nextInt();
+                    if(choice==1){ //επιλέγει να προσθέσει γεγονότα
+                        
+                    System.out.println("Do you want to add an appointment or a task? (Appointment/Task)");
+                    String answer = inpu3.nextLine();
                     do{
-                        if (answer.equalsIgnoreCase("Appointment")) {                       
+                        if (answer.equalsIgnoreCase("Appointment")) { //αν θέλει να εκτυπώσει appointments                    
+                            
+                            
+                            Path mainFilePath = Paths.get(args[0]); // παίρνει το path του αρχείου
 
-                            try (BufferedWriter writer = new BufferedWriter(new FileWriter(args[0], true))) {
-                                if(Files.size(Paths.get(args[0])) == 0) {
-                                    Files.write(Paths.get(args[0]), "BEGIN:VCALENDAR\n".getBytes());
+                            // Create a temporary file in the current folder with the name "replacement.ics"
+                            Path tempFilePath = Paths.get(mainFilePath.getParent().toString(), "replacement.ics");
+
+                            //για να γράψει στο αρχείο με append, δηλαδή  τα νέα δεδομένα θα προστεθούν στο τέλος του υπάρχοντος αρχείου χωρίς να διαγράφονται τα υπάρχοντα περιεχόμενα
+                            //δημιουργώ reader για το main αρχειο
+                            try (BufferedReader reader = Files.newBufferedReader(Paths.get(args[0]));
+                                // δημιουργώ writer για το main αρχείο      
+                                BufferedWriter writer = Files.newBufferedWriter(tempFilePath)) {
+
+                                if(Files.size(Paths.get(args[0])) == 0) { //εάν το αρχείο είναι άδειο
+
+                                    writer.write("BEGIN:VCALENDAR");
+                                    writer.newLine();
                                 }
-                         
-                                writer.write("BEGIN:VEVENT");
-                                writer.newLine();
+                                
+                                String lineToRemove = "END:VCALENDAR";
+                             
+                               String line; //διαβάζει κάθε γραμμή στο αρχείο
+                               while ((line = reader.readLine()) != null) { //όσο η γραμμή δεν είναι κενή
+
+                                    String trimmedLine = line.trim(); //σε νέα μεταβλητή αποθηκεύει την γραμμή χωρίς περιττά κενά
+                                    if(trimmedLine.equals(lineToRemove)) continue; //εάν η νέα μεταβλητή ισούται με την "END:VCALENDAR"
+                                    writer.write(line + System.getProperty("line.separator")); // αλλάζει γραμμή
+                                 }
+                                writer.write("BEGIN:VEVENT");//γράφει στο αρχείο "BEGIN:VEVENT"
+                                writer.newLine(); //αλλάζει γραμμή, πάει στην επόμενη
 
                                 System.out.println("Please enter the decription of the appointment you want:");
-                                String desc = input.nextLine();
-                                writer.write("DESCRIPTION:"+desc);
-                                writer.newLine(); // Add a newline character
+                                String desc = inpu3.nextLine();
+                                writer.write("DESCRIPTION:"  + desc);
+                                writer.newLine(); 
 
                                 System.out.println("Please enter the date start and time of the appointment (yyyyMMdd HHmmss):");
-                                String dateS = input.nextLine();
-                                // Καθορίστε τον φορματ της ημερομηνίας
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd HHmmss");
-                                // Μετατρέψτε το String σε LocalDateTime
-                                LocalDateTime dateStart = LocalDateTime.parse(dateS, formatter);
-                                // Καθορίστε ένα διαφορετικό φορματ για την εγγραφή στο αρχείο
-                                DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
-                                // Εγγραφή στο αρχείο με το επιθυμητό φορματ
+                                String dateS = inpu3.nextLine();
+
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd HHmmss"); //καθορίζει το φορμάτ της ημερομηνίας
+
+                                LocalDateTime dateStart = LocalDateTime.parse(dateS, formatter);// μετατρέπει το String σε LocalDateTime
+
+                                DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");// καθορίζει το νεο φορματ της ημερομηνίας
+
+                                // μετατρέπει το LocalDateTime στην επιθυμητή μορφή εξόδου και γράφει στο αρχείο
                                 writer.write("DTSTART;VALUE=DATE:" + dateStart.format(formatterOutput));
-                                writer.newLine();
+                                writer.newLine(); //αλλάζει γραμμή, πάει στην επόμενη
                                 
-                                System.out.println("Do you want to add the duration of the appointment or the end date? (Duratio/End date)");
-                                String option = input.nextLine();
+                                System.out.println("Do you want to add the duration of the appointment or the end date? (Duration/End date)");
+                                String option = inpu3.nextLine();
                                 if (option.equalsIgnoreCase("Duration")) {
                                     System.out.println("Please enter the duration of the appointment ( PT2H30M):");
-                                    String d = input.nextLine();
+                                    String d = inpu3.nextLine();
 
                                     try {
                                       
-                                        Duration duration = Duration.parse(d);      
-                                        writer.write("DURATION:" + duration);
+                                        Duration duration = Duration.parse(d); // μετατρέπει το String σε Duration
+                                        writer.write("DURATION:" + duration); //γράφει στο αρχείο
                                     } catch (Exception e) {
                                         System.out.println("Incorrect duration format. Use PT2H30M format.");
                                     }
 
                                 } else if (option.equalsIgnoreCase("End date")){
                                     System.out.println("Please enter the end date and time of the appointment(yyyyMMdd HHmmss):");
-                                    String dateStr = input.nextLine();
+                                    String dateStr = inpu3.nextLine();
                                     
                                     try{
                                         formatter = DateTimeFormatter.ofPattern("yyyyMMdd HHmmss");
@@ -566,58 +589,77 @@ public class Calendar {
                                 writer.newLine();
 
                                 System.out.println("Please enter the title of the appointment:");
-                                String title = input.nextLine();
+                                String title = inpu3.nextLine();
                                 writer.write("SUMMARY;LANGUAGE=en-us:Greece:"+title);
                                 writer.newLine();
 
                                 writer.write("END:VEVENT");
                                 writer.newLine();
-                                //DURATION
                                 System.out.println("Data has been written to the file successfully.");
                                 System.out.println("Do you want to add another event? (Yes/No)");
-                                String repeat = input.nextLine();
-                                if (repeat.equalsIgnoreCase("Yes")) {
-                                    rep = true;
+                                String repeat = inpu3.nextLine();
+                                if (repeat.equalsIgnoreCase("Yes")) { //θέλει να προσθέσει και άλλα events
+                                    rep = true; // boolean για μελλοντική προσθήκη εvent
                                     System.out.println("Do you want to add an appointment or a task?");
-                                    answer = input.nextLine();
-                                } else {
+                                    answer = inpu3.nextLine();
+                                } else {//δεν θέλει να προσθέσει κατι άλλο
                                     rep = false;
-                                    writer.write("END:VCALENDAR");
+                                    writer.write("END:VCALENDAR");//άφου τελείωσαν οι προσθήκες γράφει στην τελευταία γραμμή "END:VCALENDAR"
                                     writer.newLine();
                                     writer.close();
                                 }
+                                
+                                Files.delete(mainFilePath); //διαγράφει το αρχικό φάκελο
+                                //μετονομάζει το προσωρινό file στο όνομα του αρχικού
+                                Files.move(tempFilePath, tempFilePath.resolveSibling(mainFilePath.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+                                
                                                               
                             } catch (IOException e) {
 
                                 System.err.println("Error writing to the file: " + e.getMessage());
 
                             }
-                        } else if (answer.equalsIgnoreCase("Task")) {
+                        } else if (answer.equalsIgnoreCase("Task")) { //αντίστοιχα με την Appointments
+                            
+                            Path mainFilePath = Paths.get(args[0]);
 
-                            try (BufferedWriter writer = new BufferedWriter(new FileWriter(args[0], true))) {
+                           
+                            Path tempFilePath = Paths.get(mainFilePath.getParent().toString(), "replacement.ics");
+
+                            //για να γράψει στο αρχείο με append, δηλαδή  τα νέα δεδομένα θα προστεθούν στο τέλος του υπάρχοντος αρχείου χωρίς να διαγράφονται τα υπάρχοντα περιεχόμενα
+                                try (BufferedReader reader = Files.newBufferedReader(Paths.get(args[0]));
+                                BufferedWriter writer = Files.newBufferedWriter(tempFilePath)) {
+                                    
                                 if(Files.size(Paths.get(args[0])) == 0) {
-                                    Files.write(Paths.get(args[0]), "BEGIN:VCALENDAR\n".getBytes());
+                                    writer.write("BEGIN:VCALENDAR");
+                                    writer.newLine();
                                 }
+                                
+                                 String lineToRemove = "END:VCALENDAR";
+                               // Check each line in the file                              
+                               String line;
+                               while ((line = reader.readLine()) != null) {
+                                  
+                                    String trimmedLine = line.trim();
+                                     if(trimmedLine.equals(lineToRemove)) continue;
+                                     writer.write(line + System.getProperty("line.separator"));
+                                 }
 
                                 writer.write("BEGIN:VTODO");
                                 writer.newLine();
 
                                 System.out.println("Please enter the decription of the task you want:");
-                                String desc = input.nextLine();
+                                String desc = inpu3.nextLine();
                                 writer.write("DESCRIPTION:"+desc);
                                 writer.newLine(); // Add a newline character
 
                                 System.out.println("Please enter the date start and time of task (yyyyMMdd HHmmss):");
-                                String dateS = input.nextLine();
+                                String dateS = inpu3.nextLine();
                                 
                                 try {
-                                    // Καθορίστε τον φορματ της ημερομηνίας
                                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd HHmmss");
-                                    // Μετατρέψτε το String σε LocalDateTime
                                     LocalDateTime dateStart = LocalDateTime.parse(dateS, formatter);
-                                    // Καθορίστε ένα διαφορετικό φορματ για την εγγραφή στο αρχείο
                                     DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
-                                    // Εγγραφή στο αρχείο με το επιθυμητό φορματ
 
                                     writer.write("DTSTAMP:"+dateStart.format(formatterOutput)+"Z");
                                     writer.newLine();
@@ -626,7 +668,7 @@ public class Calendar {
                                 }
                                 
                                 System.out.println("Please enter the end date and time of the appointment(yyyyMMdd HHmmss):");
-                                String dateStr = input.nextLine();
+                                String dateStr = inpu3.nextLine();
                                 
                                 try {
                                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd HHmmss");
@@ -639,31 +681,35 @@ public class Calendar {
                                 }
 
                                 System.out.println("Please enter the title of task:");
-                                String title = input.nextLine();
+                                String title = inpu3.nextLine();
                                 writer.write("SUMMARY;LANGUAGE=en-us:Greece:"+title);
                                 writer.newLine();
 
-                                System.out.println("Please enter the status of task(COMPLETED, NEEDS-ACTION, IN-PROCESS, CANCELLED):");
-                                String status = input.nextLine();
+                                System.out.println("Status is ΙΝ-PROCESS");
+                                String status = "ΙΝ-PROCESS";
                                 writer.write("STATUS:"+ status);
-                                writer.newLine();
+                                writer.newLine(); 
 
                                 writer.write("END:VTODO");
                                 writer.newLine();
 
                                 System.out.println("Data has been written to the file successfully.");
                                 System.out.println("Do you want to add another event? (Yes/No)");
-                                String repeat = input.nextLine();
+                                String repeat = inpu3.nextLine();
                                 if (repeat.equalsIgnoreCase("Yes")) {
                                     rep = true;
                                     System.out.println("Do you want to add an appointment or a task?");
-                                    answer = input.nextLine();
+                                    answer = inpu3.nextLine();
                                 } else {
                                     rep = false;
                                     writer.write("END:VCALENDAR");
                                     writer.newLine();
                                     writer.close();
                                 }
+                                
+                                
+                                Files.delete(mainFilePath);
+                                Files.move(tempFilePath, tempFilePath.resolveSibling(mainFilePath.getFileName()), StandardCopyOption.REPLACE_EXISTING);
 
                             } catch (IOException e) {
 
@@ -672,18 +718,128 @@ public class Calendar {
                             }
                         } else {
 
-                            System.out.println("You entered wrong answer.");
+                            System.out.println("You entered wrong answer."); // δεν εισάγει τις επιθυμητές απαντήσεις (Appointment, Task)
                             System.exit(1);
                         }
-                    } while(rep == true);
-                }
+                    } while(rep == true); //επανάληψη όσο θέλει να προσθέτει εvents
                     
-            } else {
+                }if(choice == 2){ //επιλέγει να αλλάξει το status σε ενα task
+                    File file = new File(args[0]); //το όνομα του file καθοριζεται απο το δεύτερο όρισμα
+                    Scanner sc = new Scanner(file); // scanner για να ανοίξει και να διαβάσει το αρχείο line by line        
+         
+                    boolean vevent = true; 
+                    boolean vtask = true;
+                    String desc = "";
+                    LocalDateTime date = null;
+                    LocalDateTime dateEnd = null;
+                    String title = "";
+                    LocalDateTime deadline = null;
+                    String status = "";
+                    Duration duration = null;
+                    
+                    String line;
+
+                    while (sc.hasNextLine()) { 
+                        line = sc.nextLine(); //αποθήκευση μίας γραμμής του αρχείου στο string line για μετέπειτα επεξεργασία                       
+                    
+                    if (vtask) {
+                            
+                            //αντίστοιχα με τα παραπάνω
+ 
+                            if (line.contains("BEGIN:VTODO")) {
+                                                                
+                                vevent = false;
+                                vtask = true;
+                                
+                            } else if (line.contains("DTSTAMP")) {
+                                
+                                String[] parts = line.split(":");
+                                String dt = parts[1].trim(); 
+                                if (!dt.contains("T")) {
+                                    dt += "T000000Z"; 
+                                }
+
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");                                                                                         
+                                date = LocalDateTime.parse(dt, formatter);   
+                                
+                            } else if (line.contains("DUE;VALUE=DATE")) {   
+                                
+                                String[] parts = line.split(":");
+                                String d = parts[1].trim();
+                                if (!d.contains("T")) {
+                                    d += "T000000Z"; 
+                                }
+                              
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");                                
+                                deadline = LocalDateTime.parse(d, formatter);
+                                
+                            } else if (line.contains("SUMMARY")) {
+                                
+                                String[] parts = line.split(":");
+                                title = parts[parts.length-1].trim(); 
+                            
+                            } else if (line.contains("DESCRIPTION:")) {
+                            
+                                desc = line;
+                                String[] parts = line.split(":");
+                                desc = parts[1].trim(); 
+                            
+                            } else if (line.contains("STATUS")) {
+                                                            
+                                String[] parts = line.split(":");
+                                String s = parts[1].trim(); 
+                                if(s.equals("NEEDS-ACTION") || s.equals("IN-PROCESS") || s.equals("CANCELLED")) {
+                                    status = "INCOMPLETED";
+                                } else {
+                                    status = "'COMPLETED";
+                                }
+                           
+                            } else if (line.contains("END:VTODO")) {
+                                                              
+                                vtask = true;
+                                vevent = true;
+                                Tasks task = new Tasks(date,deadline, title, desc, status);
+                                tasks.add(task);
+                                
+                            }   
+                             
+                        }
+                    }
+                    sc.close();
+                    
+                    Scanner input2 = new Scanner(System.in);
+                    for(Tasks task : tasks){ //διατρέχει την λίστα των tasks
+                        task.printTask(); // εμφανίζει όλα τα tasks
+                        System.out.println(" ");
+                    }
+                    System.out.println("Give the title of the task you want to change the status");
+                    String statusTitle = input2.nextLine();
+                   
+                    for(Tasks task : tasks){
+                        if(statusTitle.equals(task.getTitle())){ 
+                            System.out.println("This is the current status:" + task.isStatus());
+                            System.out.println("Give the new status");
+                            String chStatus = input2.nextLine();
+                            if ( chStatus.equalsIgnoreCase("COMPLETED") || chStatus.equalsIgnoreCase("NEEDS-ACTION") || chStatus.equalsIgnoreCase("IN-PROCESS") || chStatus.equalsIgnoreCase("CANCELLED")){
+                                task.setStatus(chStatus); //αποθηκεύει το νέο status στο παλιό
+                                task.printTask();
+                                System.out.println(" ");
+                            } else {
+                                System.out.println("You entered wrong status.");
+                                System.exit(1);
+                            }
+                        }
+                        
+                    }
+                }
+                }     
+            } else { //δεν εισάγει τα επιθυμητά ορίσματα (1 για εκτύπωση γεγονότων και 2 για προσθήκη γεγονότων)
 
                 System.out.println("You entered wrong arguments");
                 System.exit(1);
 
             }
+            TimeService.stop();
     }
         
 }

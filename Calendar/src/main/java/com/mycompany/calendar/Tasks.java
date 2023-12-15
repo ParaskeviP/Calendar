@@ -86,4 +86,7 @@ public class Tasks {
 
     }
     
+    public int compareTo(Tasks other) {
+        return this.date.compareTo(other.date);
+    }
 }

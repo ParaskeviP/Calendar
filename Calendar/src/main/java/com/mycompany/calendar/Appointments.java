@@ -86,4 +86,8 @@ public class Appointments {
         System.out.println("The duration is " + duration + ".");
     }
     
+    public int compareTo(Appointments other) {
+        return this.date.compareTo(other.date);
+    }
+    
 }
