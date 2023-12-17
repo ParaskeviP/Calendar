@@ -18,13 +18,11 @@ import java.time.temporal.TemporalAdjusters;
 import gr.hua.dit.oop2.calendar.TimeService;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -97,7 +95,7 @@ public class Calendar {
                             } else if (line.contains("DURATION")) {
                                
                                 String[] parts = line.split(":"); //χωρίζει την εντολή στο μέρος πριν το " : " και μετά
-                                String d = parts[1].trim(); // παίρνει το μέρος μετά το " : ", δηλαδή την διάρκεια         
+                                String d = parts[1].trim(); // παίρνει το μέρος μετά το " : ", δηλαδή την διάρκεια     
                                 duration = Duration.parse(d); //μετατρέπει το String σε Duration
                                 dateEnd = null; //εάν υπάρχει η διάρκεια δεν θα έχει DTEND 
                             
@@ -122,8 +120,8 @@ public class Calendar {
                             
                             } else if (line.contains("END:VEVENT")) {
                                 
-                                vevent = true; //
-                                vtask = true; //
+                                vevent = true; // γίνεται true επειδή δεν γνωρίζουμε αν το επόμενο γεγονός θα ειναι task ή appointment
+                                vtask = true; // γίνεται true επειδή δεν γνωρίζουμε αν το επόμενο γεγονός θα ειναι task ή appointment
                                 //αποθήκευση και προσθήκη πληροφοριών στην λίστα
                                 Appointments appointment = new Appointments(date, dateEnd, title, desc, duration);
                                 appointments.add(appointment);    
@@ -177,13 +175,13 @@ public class Calendar {
                                 if(s.equals("NEEDS-ACTION") || s.equals("IN-PROCESS") || s.equals("CANCELLED")) {
                                     status = "INCOMPLETED";
                                 } else {
-                                    status = "'COMPLETED";
+                                    status = "COMPLETED";
                                 }
                            
                             } else if (line.contains("END:VTODO")) {
                                                               
-                                vtask = true;
-                                vevent = true;
+                                vtask = true;// γίνεται true επειδή δεν γνωρίζουμε αν το επόμενο γεγονός θα ειναι task ή appointment
+                                vevent = true;// γίνεται true επειδή δεν γνωρίζουμε αν το επόμενο γεγονός θα ειναι task ή appointment
                                 Tasks task = new Tasks(date,deadline, title, desc, status);
                                 tasks.add(task);
                                 
@@ -390,7 +388,7 @@ public class Calendar {
                     } else if (args[0].equals("pastmonth")) { //αντίστοιχα με τη pastday, pastweek
                         
                         // βρίσκει την αρχή του μήνα
-                        LocalDateTime startOfMonth = dateTime.toLocalDate().atTime(LocalTime.MIN);
+                        LocalDateTime startOfMonth = dateTime.with(TemporalAdjusters.firstDayOfMonth()).with(LocalTime.MIN);
                             
                         for(Appointments appointment : appointments) {
                             
@@ -430,7 +428,7 @@ public class Calendar {
                                                       
                             int result = dateTime.compareTo(task.getDeadline());//συγκρίνει την σημερινή ημερομηνία και ώρα με το deadline του task
                             
-                            if( (result < 0) && (!status.equals("COMPLETED")) ) { // dateTime > deadline & STATUS isn't completed
+                            if( (result < 0) && (!status.equals("COMPLETED")) ) { // dateTime > deadline & STATUS δεν ειναι completed
                                 task.printTask();
                                 check = true;
                                 System.out.println(" ");
@@ -448,7 +446,7 @@ public class Calendar {
                             
                             int result = dateTime.compareTo(task.getDeadline());
                             
-                            if( (result > 0) && (!status.equals("COMPLETED")) ) { // dateTime < deadline & STATUS isn't completed
+                            if( (result > 0) && (!status.equals("COMPLETED")) ) { // dateTime < deadline & STATUS δεν ειναι completed
                                 task.printTask();
                                 check = true;
                                 System.out.println(" ");
@@ -531,7 +529,7 @@ public class Calendar {
                                     String trimmedLine = line.trim(); //σε νέα μεταβλητή αποθηκεύει την γραμμή χωρίς περιττά κενά
                                     if(trimmedLine.equals(lineToRemove)) continue; //εάν η νέα μεταβλητή ισούται με την "END:VCALENDAR"
                                     writer.write(line + System.getProperty("line.separator")); // αλλάζει γραμμή
-                                 }
+                                }
                                 writer.write("BEGIN:VEVENT");//γράφει στο αρχείο "BEGIN:VEVENT"
                                 writer.newLine(); //αλλάζει γραμμή, πάει στην επόμενη
 
@@ -563,8 +561,10 @@ public class Calendar {
                                       
                                         Duration duration = Duration.parse(d); // μετατρέπει το String σε Duration
                                         writer.write("DURATION:" + duration); //γράφει στο αρχείο
+                                        writer.newLine();  
                                     } catch (Exception e) {
                                         System.out.println("Incorrect duration format. Use PT2H30M format.");
+                                        System.exit(1);
                                     }
 
                                 } else if (option.equalsIgnoreCase("End date")){
@@ -579,6 +579,7 @@ public class Calendar {
                                         writer.newLine();  
                                     } catch (Exception e) {
                                         System.out.println("Incorrect date format. Use yyyyMMdd HHmmss format.");
+                                        System.exit(1);
                                     }
                                 } else {
                                     System.out.println("You entered wrong answer.");
@@ -635,8 +636,8 @@ public class Calendar {
                                     writer.newLine();
                                 }
                                 
-                                 String lineToRemove = "END:VCALENDAR";
-                               // Check each line in the file                              
+                                String lineToRemove = "END:VCALENDAR";
+                                                           
                                String line;
                                while ((line = reader.readLine()) != null) {
                                   
@@ -651,7 +652,7 @@ public class Calendar {
                                 System.out.println("Please enter the decription of the task you want:");
                                 String desc = inpu3.nextLine();
                                 writer.write("DESCRIPTION:"+desc);
-                                writer.newLine(); // Add a newline character
+                                writer.newLine();
 
                                 System.out.println("Please enter the date start and time of task (yyyyMMdd HHmmss):");
                                 String dateS = inpu3.nextLine();
@@ -665,6 +666,7 @@ public class Calendar {
                                     writer.newLine();
                                 } catch (Exception e) {
                                     System.out.println("Incorrect date format. Use yyyyMMdd HHmmss format.");
+                                    System.exit(1);
                                 }
                                 
                                 System.out.println("Please enter the end date and time of the appointment(yyyyMMdd HHmmss):");
@@ -678,6 +680,7 @@ public class Calendar {
                                     writer.newLine();
                                 } catch (Exception e) {
                                     System.out.println("Incorrect date format. Use yyyyMMdd HHmmss format.");
+                                    System.exit(1);
                                 }
 
                                 System.out.println("Please enter the title of task:");
@@ -685,7 +688,7 @@ public class Calendar {
                                 writer.write("SUMMARY;LANGUAGE=en-us:Greece:"+title);
                                 writer.newLine();
 
-                                System.out.println("Status is ΙΝ-PROCESS");
+                                System.out.println("Status is automatically set ΙΝ-PROCESS");
                                 String status = "ΙΝ-PROCESS";
                                 writer.write("STATUS:"+ status);
                                 writer.newLine(); 
@@ -698,7 +701,7 @@ public class Calendar {
                                 String repeat = inpu3.nextLine();
                                 if (repeat.equalsIgnoreCase("Yes")) {
                                     rep = true;
-                                    System.out.println("Do you want to add an appointment or a task?");
+                                    System.out.println("Do you want to add an appointment or a task? (Appointment/Task)");
                                     answer = inpu3.nextLine();
                                 } else {
                                     rep = false;
@@ -791,13 +794,13 @@ public class Calendar {
                                 if(s.equals("NEEDS-ACTION") || s.equals("IN-PROCESS") || s.equals("CANCELLED")) {
                                     status = "INCOMPLETED";
                                 } else {
-                                    status = "'COMPLETED";
+                                    status = "COMPLETED";
                                 }
                            
                             } else if (line.contains("END:VTODO")) {
                                                               
-                                vtask = true;
-                                vevent = true;
+                                vtask = true;// γίνεται true επειδή δεν γνωρίζουμε αν το επόμενο γεγονός θα ειναι task ή appointment
+                                vevent = true;// γίνεται true επειδή δεν γνωρίζουμε αν το επόμενο γεγονός θα ειναι task ή appointment
                                 Tasks task = new Tasks(date,deadline, title, desc, status);
                                 tasks.add(task);
                                 
@@ -818,10 +821,12 @@ public class Calendar {
                     for(Tasks task : tasks){
                         if(statusTitle.equals(task.getTitle())){ 
                             System.out.println("This is the current status:" + task.isStatus());
-                            System.out.println("Give the new status");
+                            System.out.println("Give the new status: (COMPLETED, NEEDS-ACTION, IN-PROCESS, CANCELLED)");
                             String chStatus = input2.nextLine();
                             if ( chStatus.equalsIgnoreCase("COMPLETED") || chStatus.equalsIgnoreCase("NEEDS-ACTION") || chStatus.equalsIgnoreCase("IN-PROCESS") || chStatus.equalsIgnoreCase("CANCELLED")){
                                 task.setStatus(chStatus); //αποθηκεύει το νέο status στο παλιό
+                                System.out.println("This is the updated task:");
+                                System.out.println(" ");
                                 task.printTask();
                                 System.out.println(" ");
                             } else {
@@ -840,6 +845,7 @@ public class Calendar {
 
             }
             TimeService.stop();
+            System.out.println("Ending program.");
     }
         
 }

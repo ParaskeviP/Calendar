@@ -86,7 +86,7 @@ public class Appointments {
         System.out.println("The duration is " + duration + ".");
     }
     
-    public int compareTo(Appointments other) {
+    public int compareTo(Appointments other) { // μέθοδος για ταξινόμηση πίνακα
         return this.date.compareTo(other.date);
     }
     

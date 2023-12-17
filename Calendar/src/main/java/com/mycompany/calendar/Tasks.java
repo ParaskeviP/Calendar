@@ -86,7 +86,7 @@ public class Tasks {
 
     }
     
-    public int compareTo(Tasks other) {
+    public int compareTo(Tasks other) { // μέθοδος για ταξινόμηση πίνακα
         return this.date.compareTo(other.date);
     }
 }
